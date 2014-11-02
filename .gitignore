@@ -1,0 +1,25 @@
+# All generated java classes
+**/src/main/generated/
+**/src/main/jaxb-gen/
+**/detoured/
+
+# All compiled sources
+**/bin/
+**/build/
+*.class
+
+# Gradle cache
+.gradle/
+
+#Eclipse Stuff
+.settings/
+.classpath
+
+# All packaged stuff
+*.jar
+
+# Python project confs
+**/.project
+**/.pydevproject
+**/.ropeproject/
+**/__pycache__/
