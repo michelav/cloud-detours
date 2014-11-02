@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+
 import zmq
 import sys
 import json
@@ -8,8 +9,7 @@ import json
 
 
 def loopback(header_dict, zmq_message):
-    """
-    """
+    """ Return back the event. """
     msg_list = []
     resp_dict = {"control": "back"}
     next_pos = 0
@@ -28,8 +28,7 @@ def loopback(header_dict, zmq_message):
 
 
 def ping(header_dict, zmq_message):
-    """
-    """
+    """ Answer ping. """
     msg_list = []
     resp_dict = {"control": "pong"}
     next_pos = 0
@@ -48,6 +47,7 @@ def ping(header_dict, zmq_message):
 
 
 def handle_message(zmq_message):
+    """ Handle all messages and return and event. """
     evt_dict = json.loads(zmq_message[0].decode())
     dispatcher_ftn = control_dict[evt_dict['control']]
     evt_response = dispatcher_ftn(evt_dict, zmq_message)
@@ -55,6 +55,7 @@ def handle_message(zmq_message):
 
 
 def terminate(zmq_message):
+    """ End the server. """
     if not zmq_message:
         return True
     evt_dict = json.loads(zmq_message[0].decode())
