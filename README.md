@@ -11,7 +11,7 @@ Building Cloud Detours
 The following components are mandatory to build up Detours:
 
 * [Java][1];
-* [Apache Python][2];
+* [Python][2];
 * [Apache Libcloud][3];
 * [ZeroMQ][4] and its bidings to Java \ Python;
 * [Gradle][5].
@@ -19,7 +19,7 @@ The following components are mandatory to build up Detours:
 #### Installing Java
 You can use any method you want to install java. I've installed java8 as described in [Webupd8][6].
 
-#### Apache Python
+#### Python
 I'm currently using Python3 installed from Ubuntu 14.04 canonical sources.
 
 #### Apache Libcloud
