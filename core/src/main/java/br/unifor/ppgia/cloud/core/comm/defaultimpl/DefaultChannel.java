@@ -7,8 +7,9 @@ import br.unifor.ppgia.cloud.core.comm.Event;
 
 public class DefaultChannel implements Channel {
 
-	private static ZMQ.Context zContext = ZMQ.context(1);
+	private ZMQ.Context zContext = null;
 	private ZMQ.Socket socket;
+	private String endpoint = null;
 	
 	private final String END_DELIMITER = "[END]";
 
@@ -16,22 +17,32 @@ public class DefaultChannel implements Channel {
 		StringBuilder sb = new StringBuilder(protocol);
 		sb.append(address).append("://").append(address).append(":")
 				.append(port);
-		createConnection(sb.toString());
+		endpoint = sb.toString();
 	}
 
 	public DefaultChannel(String protocol, String address) {
 		StringBuilder sb = new StringBuilder(protocol);
 		sb.append(address).append("://").append(address);
-		createConnection(sb.toString());
+		endpoint = sb.toString();
 	}
 
 	public DefaultChannel(String endpoint) {
-		createConnection(endpoint);
+		this.endpoint = endpoint;
+	}
+	
+	void setUpContext(ZMQ.Context context) {
+		zContext = context;
+		
 	}
 
-	private void createConnection(String endpoint) {
+	public void connect() {
 		socket = zContext.socket(ZMQ.REQ);
 		socket.connect(endpoint);
+	}
+	
+	public void bind() {
+		socket = zContext.socket(ZMQ.REP);
+		socket.bind(endpoint);
 	}
 
 	@Override

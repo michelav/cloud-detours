@@ -3,25 +3,38 @@ package br.unifor.ppgia.cloud.core.comm.defaultimpl;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.zeromq.ZMQ;
+
 import br.unifor.ppgia.cloud.core.comm.Channel;
 import br.unifor.ppgia.cloud.core.comm.ChannelProvider;
 import br.unifor.ppgia.cloud.core.comm.Event;
 
 public class DefaultChannelProvider extends ChannelProvider {
 	
+	ZMQ.Context zContext = ZMQ.context(1);
+	
 	@Override
 	public Channel createChannel(String endpoint) {
-		return new DefaultChannel(endpoint);
+		DefaultChannel channel = new DefaultChannel(endpoint);
+		channel.setUpContext(zContext);
+		channel.connect();
+		return channel;
 	}
 
 	@Override
 	public Channel createChannel(String protocol, String address) {
-		return new DefaultChannel(protocol, address);
+		DefaultChannel channel = new DefaultChannel(protocol, address);
+		channel.setUpContext(zContext);
+		channel.connect();
+		return channel;
 	}
 
 	@Override
 	public Channel createChannel(String protocol, String address, int port) {
-		return new DefaultChannel(protocol, address, port);
+		DefaultChannel channel = new DefaultChannel(protocol, address, port);
+		channel.setUpContext(zContext);
+		channel.connect();
+		return channel;
 	}
 	
 	@Override
