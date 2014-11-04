@@ -37,6 +37,12 @@ class DefaultChannel(Channel):
         super(DefaultChannel, self).__init__()
         self._endpoint = endpoint
         self._context = get_context()
+        # self._socket = None
+
+    @property
+    def socket(self):
+        """ socket property."""
+        return self._socket
 
     def connect(self):
         """ Connect the channel into the _endpoint. """
