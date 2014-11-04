@@ -1,6 +1,5 @@
 
 import zmq
-import json
 
 
 __ZMQ_CONTEXT__ = None
@@ -84,11 +83,15 @@ class DefaultChannel(Channel):
 
         """
         msg = self._socket.recv_multipart()
-        # payload = None
-        header = json.loads(msg[0].decode())
-        event = [header]
-        if 'True' == header.get('payload', 'False'):
-            event.append(msg[1])
+
+        if not msg:
+            raise EventError('Invalid Event.')
+
+        event = [msg[0].decode()]
+        for frame in msg[1:]:  # Copy the rest of message but [END] delimiter
+            if '[END]' == frame.decode():
+                break
+            event.append(frame)
         return event
 
     def close(self):
