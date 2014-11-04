@@ -15,6 +15,13 @@ def get_context():
     return __ZMQ_CONTEXT__
 
 
+class EventError(Exception):
+
+    """ Default exception for EventErrors. """
+
+pass
+
+
 class Channel(object):
 
     """docstring for Channel."""
@@ -42,7 +49,7 @@ class DefaultChannel(Channel):
         self._socket = self._context.socket(zmq.REP)
         self._socket.bind(self._endpoint)
 
-    def send(self, header, payload):
+    def send(self, msg):
         """ Send event as message.
 
         The event is a list where each item is a frame
@@ -54,11 +61,11 @@ class DefaultChannel(Channel):
         [PAYLOAD FRAME] - If selected in Header frame
         [END] - End Delimiter frame
 
+        Raises MessageError if None or invalid message.
+
         """
-        msg = []
-        msg.append(header.encode())
-        if payload:
-            msg.append(payload)
+        if not msg:
+            raise EventError('Invalid Event.')
         msg.append('[END]'.encode())
         self._socket.send_multipart(msg)
 
@@ -77,11 +84,12 @@ class DefaultChannel(Channel):
 
         """
         msg = self._socket.recv_multipart()
-        payload = None
+        # payload = None
         header = json.loads(msg[0].decode())
+        event = [header]
         if 'True' == header.get('payload', 'False'):
-            payload = msg[1]
-        return header, payload
+            event.append(msg[1])
+        return event
 
     def close(self):
         """ Close channel connection. """
