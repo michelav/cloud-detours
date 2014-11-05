@@ -6,7 +6,6 @@ may use to create dispatchers and plug them into Cloud Detours.
 
 """
 import zmq
-import json
 import comm.channel as channel
 
 
@@ -52,7 +51,7 @@ class ReactorDispatcher(object):
     def _handle_control_evt(self):
         """ Process control messages. """
         control_evt = self._control.recv()
-        header = json.loads(control_evt[0])
+        header = control_evt[0]
 
         # TODO: Include all message possibilities
         action = header['action']

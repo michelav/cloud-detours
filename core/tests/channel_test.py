@@ -1,5 +1,4 @@
 import unittest
-import json
 import comm.channel as channel
 
 
@@ -29,15 +28,15 @@ class ChannelTestCase(unittest.TestCase):
 
     def send_recv_test(self):
         """ Send and Receive Test. """
-        go = '{\"control\": \"ping\", \"payload\": \"True\"}'
+        go = {'control': 'ping', 'payload': 'True'}
         payload = bytes([0, 1, 2, 3, 4, 5, 6])
 
         client = ChannelTestCase._client
         server = ChannelTestCase._server
-        client.send([go.encode(), payload, '[END]'.encode()])
+        client.send([go, payload])
         event = server.recv()
 
-        come = json.loads(event[0])
+        come = event[0]
         data = event[1]
 
         self.assertEqual('ping', come['control'], 'Headers are not equals.')

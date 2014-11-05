@@ -1,5 +1,6 @@
 
 import zmq
+import json
 
 
 __ZMQ_CONTEXT__ = None
@@ -54,7 +55,7 @@ class DefaultChannel(Channel):
         self._socket = self._context.socket(zmq.REP)
         self._socket.bind(self._endpoint)
 
-    def send(self, msg):
+    def send(self, evt):
         """ Send event as message.
 
         The event is a list where each item is a frame
@@ -69,8 +70,15 @@ class DefaultChannel(Channel):
         Raises MessageError if None or invalid message.
 
         """
-        if not msg:
+        if not evt:
             raise EventError('Invalid Event.')
+
+        header = evt[0]
+        has_payload = ('True' == header.get('payload', 'False'))
+        msg = [json.dumps(header).encode()]
+        if has_payload:
+            msg.append(evt[1])
+
         msg.append('[END]'.encode())
         self._socket.send_multipart(msg)
 
@@ -93,7 +101,7 @@ class DefaultChannel(Channel):
         if not msg:
             raise EventError('Invalid Event.')
 
-        event = [msg[0].decode()]
+        event = [json.loads(msg[0].decode())]
         for frame in msg[1:]:  # Copy the rest of message but [END] delimiter
             if '[END]' == frame.decode():
                 break

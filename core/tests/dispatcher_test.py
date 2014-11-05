@@ -1,5 +1,4 @@
 import threading
-import json
 import unittest
 import comm.channel as channel
 import handling.dispatcher as dispatcher
@@ -20,11 +19,10 @@ class Handler(object):
         """ Mock handle event. """
         evt = self._handle.recv()
         self._header = evt[0]
-        header_dict = json.loads(evt[0])
-        if 'True' == header_dict.get('payload', 'False'):
+        if 'True' == self._header.get('payload', 'False'):
             self._payload = [x**self._id for x in evt[1]]
-        resp_msg = "{\"sink\": \"%d\"}" % self._id
-        self._handle.send([resp_msg.encode()])
+        resp_msg = {'sink': self._id}
+        self._handle.send([resp_msg])
 
 
 class ReactorDispatcherTestCase(unittest.TestCase):
@@ -67,12 +65,12 @@ class ReactorDispatcherTestCase(unittest.TestCase):
         """ Test dispacth events. """
         handlers = ReactorDispatcherTestCase._handlers
         # msg = "{\"source\": \"%d\", \"payload\": \"False\"}"
-        header1 = "{\"source\": \"1\", \"payload\": \"False\"}"
+        header1 = {'source': '1', 'payload': 'False'}
 
-        header2 = "{\"source\": \"2\", \"payload\": \"True\"}"
+        header2 = {'source': '2', 'payload': 'True'}
         payload2 = bytes([1, 2])
 
-        header3 = "{\"source\": \"3\", \"payload\": \"True\"}"
+        header3 = {'source': '3', 'payload': 'True'}
         payload3 = bytes([1, 2, 3])
         try:
             client1 = ReactorDispatcherTestCase._clients[1]
@@ -81,34 +79,36 @@ class ReactorDispatcherTestCase(unittest.TestCase):
         except KeyError as k:
             self.fail("Could not get clients: {0}".format(k))
 
-        client1.send([header1.encode()])
+        client1.send([header1])
         resp1 = client1.recv()
-        self.assertEquals("{\"sink\": \"1\"}", resp1[0])
-        self.assertEquals(header1, handlers[1]._header)
+        self.assertEquals(1, resp1[0].get('sink'), 'Sink value wrong.')
+        self.assertEquals(header1['source'], handlers[1]._header['source'])
+        self.assertEquals(header1['payload'], handlers[1]._header['payload'])
 
-        client2.send([header2.encode(), payload2])
+        client2.send([header2, payload2])
         resp2 = client2.recv()
 
-        self.assertEquals(header2, handlers[2]._header)
+        self.assertEquals('2', handlers[2]._header['source'])
+        self.assertEquals('True', handlers[2]._header['payload'])
         self.assertEquals(payload2[0], handlers[2]._payload[0])
         self.assertEquals(payload2[1]**2, handlers[2]._payload[1])
-        self.assertEquals("{\"sink\": \"2\"}", resp2[0])
+        self.assertEquals(2, resp2[0].get('sink'), 'Sink value wrong.')
 
-        client3.send([header3.encode(), payload3])
+        client3.send([header3, payload3])
         resp3 = client3.recv()
 
-        self.assertEquals(header3, handlers[3]._header)
         # Checking handling of third client
-        self.assertEquals(header3, handlers[3]._header)
+        self.assertEquals('3', handlers[3]._header['source'])
+        self.assertEquals('True', handlers[3]._header['payload'])
         self.assertEquals(payload3[0], handlers[3]._payload[0])
         self.assertEquals(payload3[1]**3, handlers[3]._payload[1])
         self.assertEquals(payload3[2]**3, handlers[3]._payload[2])
         # Receing response from handler3
-        self.assertEquals("{\"sink\": \"3\"}", resp3[0])
+        self.assertEquals(3, resp3[0].get('sink'), 'Sink value wrong.')
 
         control = channel.DefaultChannel('ipc:///tmp/control.ipc')
         control.connect()
-        control.send(["{\"action\": \"terminate\"}".encode()])
+        control.send([{'action': 'terminate'}])
         control.close()
 
 if __name__ == '__main__':
