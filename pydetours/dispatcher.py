@@ -6,7 +6,7 @@ may use to create dispatchers and plug them into Cloud Detours.
 
 """
 import zmq
-import comm.channel as channel
+from pydetours.comm import DefaultChannel
 
 
 class ReactorDispatcher(object):
@@ -24,7 +24,7 @@ class ReactorDispatcher(object):
         self._handles = self._handler_table.keys()
 
         # TODO Adjust method to use a control channel
-        self._control = channel.DefaultChannel('ipc:///tmp/control.ipc')
+        self._control = DefaultChannel('ipc:///tmp/control.ipc')
         self._control.bind()
         self._dispatching = True
 

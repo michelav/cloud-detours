@@ -1,7 +1,7 @@
 import threading
 import unittest
-import comm.channel as channel
-import handling.dispatcher as dispatcher
+from pydetours.comm import DefaultChannel
+from pydetours.dispatcher import Dispatcher
 
 
 class Handler(object):
@@ -39,8 +39,8 @@ class ReactorDispatcherTestCase(unittest.TestCase):
 
         for x in range(1, cls._RANGE):
             endpoint = "ipc:///tmp/%d.ipc" % x
-            cls._clients[x] = channel.DefaultChannel(endpoint)
-            cls._servers[x] = channel.DefaultChannel(endpoint)
+            cls._clients[x] = DefaultChannel(endpoint)
+            cls._servers[x] = DefaultChannel(endpoint)
             cls._clients[x].connect()
             cls._servers[x].bind()
 
@@ -51,7 +51,7 @@ class ReactorDispatcherTestCase(unittest.TestCase):
             cls._handlers[x] = handler
             handler_table[server.socket] = handler
 
-        my_dispatcher = dispatcher.Dispatcher(handler_table)
+        my_dispatcher = Dispatcher(handler_table)
         threading.Thread(target=my_dispatcher.dispatch_events).start()
 
     @classmethod
@@ -106,7 +106,7 @@ class ReactorDispatcherTestCase(unittest.TestCase):
         # Receing response from handler3
         self.assertEquals(3, resp3[0].get('sink'), 'Sink value wrong.')
 
-        control = channel.DefaultChannel('ipc:///tmp/control.ipc')
+        control = DefaultChannel('ipc:///tmp/control.ipc')
         control.connect()
         control.send([{'action': 'terminate'}])
         control.close()

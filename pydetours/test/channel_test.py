@@ -1,5 +1,5 @@
 import unittest
-import comm.channel as channel
+from pydetours.comm import DefaultChannel, EventError
 
 
 class ChannelTestCase(unittest.TestCase):
@@ -9,8 +9,8 @@ class ChannelTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """ SetUp the whole class. """
-        cls._client = channel.DefaultChannel('ipc:///tmp/channels.ipc')
-        cls._server = channel.DefaultChannel('ipc:///tmp/channels.ipc')
+        cls._client = DefaultChannel('ipc:///tmp/channels.ipc')
+        cls._server = DefaultChannel('ipc:///tmp/channels.ipc')
         cls._client.connect()
         cls._server.bind()
 
@@ -24,7 +24,7 @@ class ChannelTestCase(unittest.TestCase):
         """ MessageError Test. """
         evt = None
         client = ChannelTestCase._client
-        self.assertRaises(channel.EventError, client.send, evt)
+        self.assertRaises(EventError, client.send, evt)
 
     def send_recv_test(self):
         """ Send and Receive Test. """
