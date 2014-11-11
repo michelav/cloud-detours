@@ -40,8 +40,8 @@ class DefaultIOHandlerTestCase(unittest.TestCase):
         self.handle = Handle()
         self.cloud_options = {'name': 'google-cloud',
                               'provider': 'google_storage',
-                              'id': 'GOOGSXW3LUAKIHCET5TE',
-                              'key': 'B65c9IFMf+hHyp5ETDNTIjNnKcYl9IinVrbSDNf4',
+                              'id': 'my_id',
+                              'key': 'my_key',
                               'container': 'cloud-detours-test',
                               'path_prefix': self.local_path
                               }

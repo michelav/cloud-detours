@@ -28,19 +28,19 @@ detours:
         CloudProvider:
             name: aws
             provider: s3_us_west_oregon
-            id: AKIAIPQ2KPKHOT5VHXHA
-            key: ZpMsfDeYKKY5xIrfbnGHRRI04OI+sCjAY3uG+87w
+            id: <PLACE YOUR ID HERE>
+            key: <PLACE YOUR KEY HERE>
             container: detours
-            path_prefix: /home/michel/devel/jspider/
+            path_prefix: /foo/bar/
         CloudProvider:
             name: google-cloud
             provider: google_storage
-            id: GOOGSXW3LUAKIHCET5TE
-            key: B65c9IFMf+hHyp5ETDNTIjNnKcYl9IinVrbSDNf4
+            id: <PLACE YOUR ID HERE>
+            key: <PLACE YOUR KEY HERE>
             container: cloud-detours-test
-            path_prefix: /home/michel/devel/jspider/
+            path_prefix: /foo/bar/
         LocalProvider:
             name: on-premise
             provider: 'Local FS'
             container: /tmp/detours/
-            path_prefix: /home/michel/devel/jspider/
+            path_prefix: /foo/bar/
