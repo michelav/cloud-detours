@@ -1,0 +1,46 @@
+logging:
+    version: 1
+    disable_existing_loggers: False
+    formatters:
+      brief:
+        format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+      precise:
+        format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        datefmt: '%Y-%m-%d %H:%M:%S'
+    handlers:
+      console:
+        class : logging.StreamHandler
+        formatter: brief
+        level   : INFO
+        stream  : ext://sys.stdout
+      file:
+        class : logging.handlers.RotatingFileHandler
+        formatter: precise
+        level   : DEBUG
+        filename: detours.log
+        maxBytes: 1024
+        backupCount: 3
+    root:
+        level: DEBUG
+        handlers: [console, file]
+detours:
+    io_providers:
+        CloudProvider:
+            name: aws
+            provider: s3_us_west_oregon
+            id: AKIAIPQ2KPKHOT5VHXHA
+            key: ZpMsfDeYKKY5xIrfbnGHRRI04OI+sCjAY3uG+87w
+            container: detours
+            path_prefix: /home/michel/devel/jspider/
+        CloudProvider:
+            name: google-cloud
+            provider: google_storage
+            id: GOOGSXW3LUAKIHCET5TE
+            key: B65c9IFMf+hHyp5ETDNTIjNnKcYl9IinVrbSDNf4
+            container: cloud-detours-test
+            path_prefix: /home/michel/devel/jspider/
+        LocalProvider:
+            name: on-premise
+            provider: 'Local FS'
+            container: /tmp/detours/
+            path_prefix: /home/michel/devel/jspider/
