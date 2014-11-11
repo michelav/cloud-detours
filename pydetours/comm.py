@@ -45,6 +45,11 @@ class DefaultChannel(Channel):
         """ socket property."""
         return self._socket
 
+    @property
+    def endpoint(self):
+        """ socket property."""
+        return self._endpoint
+
     def connect(self):
         """ Connect the channel into the _endpoint. """
         self._socket = self._context.socket(zmq.REQ)
