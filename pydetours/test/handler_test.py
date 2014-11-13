@@ -3,6 +3,7 @@ import unittest
 from pydetours.core import BadContainerError, BadOptionsError, BadProviderError
 from pathlib import Path
 import pydetours.handler as handler
+from pydetours.handler import DefaultCloudProvider, LocalProvider
 
 class Handle(object):
 
@@ -38,67 +39,67 @@ class DefaultIOHandlerTestCase(unittest.TestCase):
     def setUp(self):
         self.local_path = str(Path('.').absolute())
         self.handle = Handle()
-        self.cloud_options = {'name': 'google-cloud',
-                              'provider': 'google_storage',
-                              'id': 'my_id',
-                              'key': 'my_key',
-                              'container': 'cloud-detours-test',
+        self.cloud_options = {'provider_name': 'google_storage',
+                              'provider_class': DefaultCloudProvider,
+                              'id': 'GOOGJ5BYZJI6YJG46TLQ',
+                              'key': '6IY+u3i9gxN2Sbx4KGlspFgRg5VkQlmMo331p5rf',
+                              'container_name': 'cloud-detours-test',
                               'path_prefix': self.local_path
                               }
 
-        self.local_options = {'name': 'Local FS',
-                              'provider': 'file system',
-                              'container': '/tmp/detours',
+        self.local_options = {'provider_name': 'file system',
+                              'provider_class': LocalProvider,
+                              'container_name': '/tmp/detours',
                               'path_prefix': self.local_path
                               }
         self.cloud_handler = handler.DefaultIOHandler(
-            self.handle, self.cloud_options, handler.DefaultCloudProvider)
+            self.handle, name='Google', **self.cloud_options)
 
         self.local_handler = handler.DefaultIOHandler(
-            self.handle, self.local_options)
+            self.handle, name='Local', **self.local_options)
 
     def provider_does_not_exists_test(self):
-        options = {'name': 'google-cloud',
-                   'provider': 'new_provider',
+        options = {'provider_name': 'google-cloud',
+                   'provider_class': DefaultCloudProvider,
                    'id': '1234',
                    'key': '5678',
-                   'container': 'bad_container',
+                   'container_name': 'bad_container',
                    'path_prefix': self.local_path
                    }
 
         with self.assertRaises(BadProviderError):
             handler.DefaultIOHandler(
-                self.handle, options, handler.DefaultCloudProvider)
+                self.handle, name='Google', **options)
 
     def bad_container_test(self):
-        cloud_options = {'name': 'google-cloud',
-                         'provider': 'google_storage',
+        cloud_options = {'provider_name': 'google_storage',
+                         'provider_class': DefaultCloudProvider,
                          'id': '1234',
                          'key': '5678',
-                         'container': 'bad_container',
+                         'container_name': 'bad_container',
                          'path_prefix': self.local_path
                          }
 
-        local_options = {'name': 'google-cloud',
-                         'provider': 'google_storage',
+        local_options = {'provider_name': 'google-cloud',
+                         'provider_class': LocalProvider,
                          'id': '1234',
                          'key': '5678',
-                         'container': 'bad_container',
+                         'container_name': 'bad_container',
                          'path_prefix': self.local_path
                          }
 
         with self.assertRaises(BadContainerError):
             handler.DefaultIOHandler(
-                self.handle, cloud_options, handler.DefaultCloudProvider)
-            handler.DefaultIOHandler(self.handle, local_options)
+                self.handle, name='Google', **cloud_options)
+            handler.DefaultIOHandler(self.handle, **local_options)
 
     def bad_options_test(self):
         options = {}
 
         with self.assertRaises(BadOptionsError):
             handler.DefaultIOHandler(
-                self.handle, options, handler.DefaultCloudProvider)
-            handler.DefaultIOHandler(self.handle, options)
+                self.handle, name='Google CLoud', **options)
+            handler.DefaultIOHandler(self.handle, name='Local', **options)
 
     def mkdir_test(self):
 

@@ -6,7 +6,7 @@ import json
 __ZMQ_CONTEXT__ = None
 
 
-def get_context():
+def get_Zcontext():
     """ Build Context as a singleton. """
     global __ZMQ_CONTEXT__
     if __ZMQ_CONTEXT__ is None:
@@ -37,7 +37,7 @@ class DefaultChannel(Channel):
         """ Constructor. """
         super(DefaultChannel, self).__init__()
         self._endpoint = endpoint
-        self._context = get_context()
+        self._context = get_Zcontext()
         # self._socket = None
 
     @property

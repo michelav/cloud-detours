@@ -9,6 +9,7 @@ from io import BytesIO
 from pathlib import Path
 from pydetours.core import CloudDetoursError, BadProviderError
 from pydetours.core import BadContainerError, BadOptionsError
+from pydetours.core import detours_context
 from libcloud.storage.providers import get_driver
 from libcloud.storage.types import ObjectDoesNotExistError
 from libcloud.storage.types import ContainerDoesNotExistError
@@ -43,12 +44,11 @@ FALSE = 'False'
 
 class Provider(object):
 
-    def __init__(self, options):
+    def __init__(self, **options):
         """ Build a Cloud Provider. """
         try:
-            self._name = options['provider']
-            self._provider = options['provider']
-            self._container_name = options['container']
+            self._name = options['provider_name']
+            self._container_name = options['container_name']
             # Formating prefix
             raw = options['path_prefix']
             self._prefix = raw if ('/' == raw[-1:]) else "%s/" % (raw)
@@ -63,11 +63,6 @@ class Provider(object):
     def name(self):
         """ Provider constant. """
         return self._name
-
-    @property
-    def provider(self):
-        """ Provider constant. """
-        return self._provider
 
     @property
     def container_name(self):
@@ -92,32 +87,30 @@ class DefaultCloudProvider(Provider):
 
     """ Provides an IO resource. """
 
-    def __init__(self, options):
+    def __init__(self, **options):
         """ Build a Cloud Provider. """
-        super(DefaultCloudProvider, self).__init__(options)
+        super(DefaultCloudProvider, self).__init__(**options)
         try:
-            cls = get_driver(self._provider)
-            self._driver = cls(
-                options['id'], options['key'])
+            cls = get_driver(self._name)
+            self._driver = cls(options['id'], options['key'])
 
             self._container = self._driver.get_container(self._container_name)
             logger.info(
                 "Connected to %s container from %s provider.",
-                self._container_name,
-                self._provider)
+                self._container_name, self._name)
 
         except AttributeError:
             msg = "Provider %s doesn't exists in detours."
-            self._handle_error(BadProviderError, msg, self._provider)
+            self._handle_error(BadProviderError, msg, self._name)
 
         except ContainerDoesNotExistError:
             msg = "Container %s does not exists in %s provider."
             self._handle_error(
-                BadContainerError, msg, self._container_name, self._provider)
+                BadContainerError, msg, self._container_name, self._name)
 
         except Exception:
             msg = "Fatal error while creating %s provider."
-            self._handle_error(CloudDetoursError, msg, self._provider)
+            self._handle_error(CloudDetoursError, msg, self._name)
             raise
 
     def exists(self, object_name):
@@ -212,20 +205,20 @@ class DefaultCloudProvider(Provider):
 
 class LocalProvider(Provider):
 
-    def __init__(self, options):
+    def __init__(self, **options):
         """ Constructor. """
-        super(LocalProvider, self).__init__(options)
+        super(LocalProvider, self).__init__(**options)
         self._container = Path(self._container_name)
         if not self._container.is_dir():
             msg = "Container {} does not exists in {} provider.".format(
-                self._container_name, self._provider)
+                self._container_name, self._name)
             logger.error(msg)
             raise BadContainerError(msg)
 
         logger.info(
             "Connected to %s container from %s provider.",
             self._container,
-            self._provider)
+            self._name)
 
     def exists(self, object_name):
         """ Check if object_name exists  in provider. """
@@ -246,7 +239,7 @@ class LocalProvider(Provider):
             return b''.join(parts)
         except FileNotFoundError:
             logger.warning(
-                "File %s not found in %s", file_name, self._provider)
+                "File %s not found in %s", file_name, self._name)
             return None
 
     def write(self, object_name, data):
@@ -293,7 +286,7 @@ class DefaultIOHandler(object):
 
     """ Sugar class to test Dispatching Mechanism. """
 
-    def __init__(self, handle, options, provider=LocalProvider):
+    def __init__(self, handle, **options):
         """ Constructor.
 
         Handle is the source of any arriving event.
@@ -308,9 +301,10 @@ class DefaultIOHandler(object):
 
         """
         super(DefaultIOHandler, self).__init__()
-        self._provider = provider(options)
+        provider_cls = options.get('provider_class', LocalProvider)
+        self._provider = provider_cls(**options)
         self._name = options['name']
-        self._options = options
+#        self._options = options
         self._handle = handle
         self._actions = {READ_ACTION: self._read,
                          WRITE_ACTION: self._write,
