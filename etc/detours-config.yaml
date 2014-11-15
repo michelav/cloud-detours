@@ -24,23 +24,5 @@ logging:
         level: DEBUG
         handlers: [console, file]
 detours:
-    io_providers:
-        CloudProvider:
-            name: aws
-            provider: s3_us_west_oregon
-            id: <PLACE YOUR ID HERE>
-            key: <PLACE YOUR KEY HERE>
-            container: detours
-            path_prefix: /foo/bar/
-        CloudProvider:
-            name: google-cloud
-            provider: google_storage
-            id: <PLACE YOUR ID HERE>
-            key: <PLACE YOUR KEY HERE>
-            container: cloud-detours-test
-            path_prefix: /foo/bar/
-        LocalProvider:
-            name: on-premise
-            provider: 'Local FS'
-            container: /tmp/detours/
-            path_prefix: /foo/bar/
+    keys: '~/devel/keys.yaml'
+    dispatch_layer: 'etc/dispatcher.yaml'

@@ -9,7 +9,6 @@ from io import BytesIO
 from pathlib import Path
 from pydetours.core import CloudDetoursError, BadProviderError
 from pydetours.core import BadContainerError, BadOptionsError
-from pydetours.core import detours_context
 from libcloud.storage.providers import get_driver
 from libcloud.storage.types import ObjectDoesNotExistError
 from libcloud.storage.types import ContainerDoesNotExistError
@@ -21,6 +20,7 @@ logger = logging.getLogger(__name__)
 is_debug_enabled = logger.isEnabledFor(logging.DEBUG)
 
 # Module Constants
+CONTROL = 'control'
 ACTION = 'action'
 RETURN = 'return'
 ERROR = 'error'
@@ -41,8 +41,9 @@ TRUE = 'True'
 FALSE = 'False'
 
 
-
 class Provider(object):
+
+    """ Provider Base Class. """
 
     def __init__(self, **options):
         """ Build a Cloud Provider. """
@@ -80,7 +81,6 @@ class Provider(object):
         parsed_msg = msg % args if args else msg
         logger.exception(parsed_msg)
         raise error(parsed_msg)
-
 
 
 class DefaultCloudProvider(Provider):
@@ -205,6 +205,8 @@ class DefaultCloudProvider(Provider):
 
 class LocalProvider(Provider):
 
+    """ Provides local storage IO. """
+
     def __init__(self, **options):
         """ Constructor. """
         super(LocalProvider, self).__init__(**options)
@@ -282,7 +284,53 @@ class LocalProvider(Provider):
         return "%s/%s" % (self._container_name, cur_path)
 
 
-class DefaultIOHandler(object):
+class Handler(object):
+
+    """ Abstract class to process incoming events. """
+
+    @property
+    def handle(self):
+        """ Handle property. """
+        return self._handle
+
+    def __init__(self, handle, **options):
+        """ Constructor. """
+        super(Handler, self).__init__()
+        self._name = options['name']
+        self._handle = handle
+        self._actions = {}
+
+    def handle_event(self):
+        """ Process events found in its handle. """
+        evt = self._handle.recv()
+        header = evt[0]
+        action = header.get(ACTION)
+        handle_ftn = self._actions.get(action, self._default_action)
+        logger.info("%s Handler: Action %s received.", self._name, action)
+        handle_ftn(evt)
+
+    def stop(self):
+        """ Free all resources and close handle. """
+        self._handle.close()
+        logger.info("Handler %s stopped.", self._name)
+
+    def _default_action(self, event):
+        header = {ERROR, 'Unknown action.'}
+        resp_evt = self._build_evt(header)
+        self._handle.send(resp_evt)
+
+    def _build_evt(self, header, payload=None):
+        """ Build the response event. """
+        evt = [header]
+        if payload:
+            evt.append(payload)
+            header[PAYLOAD] = TRUE
+        else:
+            header[PAYLOAD] = FALSE
+        return evt
+
+
+class DefaultIOHandler(Handler):
 
     """ Sugar class to test Dispatching Mechanism. """
 
@@ -300,12 +348,9 @@ class DefaultIOHandler(object):
         custom Handler.
 
         """
-        super(DefaultIOHandler, self).__init__()
+        super(DefaultIOHandler, self).__init__(handle, **options)
         provider_cls = options.get('provider_class', LocalProvider)
         self._provider = provider_cls(**options)
-        self._name = options['name']
-#        self._options = options
-        self._handle = handle
         self._actions = {READ_ACTION: self._read,
                          WRITE_ACTION: self._write,
                          CLOSE_ACTION: self._close,
@@ -320,12 +365,21 @@ class DefaultIOHandler(object):
             self._name,
             self._handle.endpoint)
 
-    def handle_event(self):
-        """ Process events found in its handle. """
-        evt = self._handle.recv()
-        header = evt[0]
-        handle_ftn = header.get(ACTION, self._default_action)
-        handle_ftn(evt)
+    def check_status(self):
+        """ Check if everything is ok in handler. """
+        obj_name = "status_ok.txt"
+        text = "All OK"
+        ok = True
+        try:
+            self._provider.write(obj_name, text)
+            received = (text.encode() == self._provider.read(obj_name))
+            self._delete(obj_name)
+        except Exception:
+            ok = False
+        else:
+            ok = (ok and received)
+
+        return ok
 
     def _read(self, event):
         """ Read the object from provider. """
@@ -475,23 +529,39 @@ class DefaultIOHandler(object):
             'NotImplementedError', 'Open action is not implemented.')
         self._handle.send(resp_evt)
 
-    def _default_action(self, event):
-        resp_evt = self._handle_error(
-            'NotImplementedError', 'Default action is not implemented.')
-        self._handle.send(resp_evt)
-
-    def _build_evt(self, header, payload=None):
-        """ Build the response event. """
-        evt = [header]
-        if payload:
-            evt.append(payload)
-            header[PAYLOAD] = TRUE
-        else:
-            header[PAYLOAD] = FALSE
-        return evt
-
     def _handle_error(self, error_type, message):
         logger.exception(message)
         resp_header = {ERROR: error_type, MESSAGE: message,
                        PAYLOAD: FALSE}
         return [resp_header]
+
+
+class SimpleControlHandler(Handler):
+
+    """ Simple handler that process control messages. """
+
+    @property
+    def controlled(self):
+        return self._controlled
+
+    @controlled.setter
+    def controlled(self, value):
+        self._controlled = value
+
+    def __init__(self, handle, **options):
+        super(SimpleControlHandler, self).__init__(handle, **options)
+        self._actions = {'status': self._check_status,
+                 'terminate': self._terminate}
+
+        logger.info("%s Handler available at %s endpoint.",
+            self._name,
+            self._handle.endpoint)
+
+    def _check_status(self, evt):
+        status = self._controlled.check_status()
+        header = {ACTION: 'status', RETURN: status}
+        self._handle.send(self._build_evt(header))
+
+    def _terminate(self, evt):
+        logger.info("Terminate command requested.")
+        self._controlled.terminate()

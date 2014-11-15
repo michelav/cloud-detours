@@ -91,7 +91,7 @@ class DefaultIOHandlerTestCase(unittest.TestCase):
         with self.assertRaises(BadContainerError):
             handler.DefaultIOHandler(
                 self.handle, name='Google', **cloud_options)
-            handler.DefaultIOHandler(self.handle, **local_options)
+            handler.DefaultIOHandler(self.handle, name= 'Local', **local_options)
 
     def bad_options_test(self):
         options = {}

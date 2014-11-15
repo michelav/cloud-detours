@@ -2,6 +2,7 @@ import threading
 import unittest
 from pydetours.comm import DefaultChannel
 from pydetours.dispatcher import Dispatcher
+from pydetours.handler import SimpleControlHandler
 
 
 class Handler(object):
@@ -23,6 +24,10 @@ class Handler(object):
             self._payload = [x**self._id for x in evt[1]]
         resp_msg = {'sink': self._id}
         self._handle.send([resp_msg])
+
+    def stop(self):
+        """ Free all resources and close handle. """
+        self._handle.close()
 
 
 class ReactorDispatcherTestCase(unittest.TestCase):
@@ -51,7 +56,11 @@ class ReactorDispatcherTestCase(unittest.TestCase):
             cls._handlers[x] = handler
             handler_table[server.socket] = handler
 
+        control_channel = DefaultChannel('ipc:///tmp/control.ipc')
+        control_channel.bind()
+        control_handler = SimpleControlHandler(control_channel, name='Control')
         my_dispatcher = Dispatcher(handler_table)
+        my_dispatcher.control_handler = control_handler
         threading.Thread(target=my_dispatcher.dispatch_events).start()
 
     @classmethod
@@ -62,7 +71,7 @@ class ReactorDispatcherTestCase(unittest.TestCase):
             cls._servers[x].close()
 
     def dispatch_events_test(self):
-        """ Test dispacth events. """
+        # """ Test dispatch events. """
         handlers = ReactorDispatcherTestCase._handlers
         # msg = "{\"source\": \"%d\", \"payload\": \"False\"}"
         header1 = {'source': '1', 'payload': 'False'}

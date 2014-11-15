@@ -1,9 +1,16 @@
 
 import zmq
 import json
+import logging
 
 
 __ZMQ_CONTEXT__ = None
+
+""" Module-wide logger """
+logger = logging.getLogger(__name__)
+
+""" Fast pass for isEnableFor(DEBUG). """
+is_debug_enabled = logger.isEnabledFor(logging.DEBUG)
 
 
 def get_Zcontext():
@@ -115,4 +122,6 @@ class DefaultChannel(Channel):
 
     def close(self):
         """ Close channel connection. """
+        # self._socket.setsockopt(zmq.LINGER, 0)
         self._socket.close()
+        logger.info("%s connection closed.", self._endpoint)

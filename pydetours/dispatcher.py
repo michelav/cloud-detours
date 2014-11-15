@@ -6,12 +6,38 @@ may use to create dispatchers and plug them into Cloud Detours.
 
 """
 import zmq
-from pydetours.comm import DefaultChannel
+import logging
+from pydetours.core import CloudDetoursError
+
+
+""" Module-wide logger """
+logger = logging.getLogger(__name__)
+
+""" Fast pass for isEnableFor(DEBUG). """
+is_debug_enabled = logger.isEnabledFor(logging.DEBUG)
 
 
 class ReactorDispatcher(object):
 
     """Uses Reactor Pattern to dispatch events. """
+
+    @property
+    def control_handler(self):
+        """ Control handler property.
+
+        Tuple with handle as first element and handler as value
+        Fulfill Reactor pattern with a control channel.
+        """
+        return self._control_handler
+
+    @control_handler.setter
+    def control_handler(self, value):
+        """ Control handler property. """
+        self._control_handler = value
+        handle = self._control_handler.handle.socket
+        self._handler_table[handle] = self._control_handler
+        self._control_handler.controlled = self
+        self._dispatching = True
 
     def __init__(self, handler_table):
         """ Constructor.
@@ -21,32 +47,29 @@ class ReactorDispatcher(object):
         """
         super(ReactorDispatcher, self).__init__()
         self._handler_table = handler_table
-        self._handles = self._handler_table.keys()
-
-        # TODO Adjust method to use a control channel
-        self._control = DefaultChannel('ipc:///tmp/control.ipc')
-        self._control.bind()
-        self._dispatching = True
 
     def dispatch_events(self):
         """ Handle all arriving events and dispatch to appropriate handler. """
+        if self._control_handler is None:
+            msg = "Control Handler is not configured."
+            logger.error(msg)
+            raise CloudDetoursError(msg)
+
+        handles = self._handler_table.keys()
         poller = zmq.Poller()
-        for handle in self._handles:  # detours channel
+        for handle in handles:  # detours channel
             poller.register(handle, zmq.POLLIN)
 
-        poller.register(self._control.socket, zmq.POLLIN)
+        # poller.register(self._control.socket, zmq.POLLIN)
         while self._dispatching:
             try:
                 socks = dict(poller.poll())
             except KeyboardInterrupt:
+                self._terminate()
                 break
             for ready_channel in socks.keys():
-                if(ready_channel == self._control.socket):
-                    self._handle_control_evt()  # Control Channels
-                    continue
                 handler = self._handler_table[ready_channel]
                 handler.handle_event()
-        self._control.close()
 
     def _handle_control_evt(self):
         """ Process control messages. """
@@ -57,10 +80,32 @@ class ReactorDispatcher(object):
         action = header['action']
         self._dispatching = not ('terminate' == action)
 
+    def terminate(self):
+        """ Terminate dispatching process. """
+        handlers = self._handler_table.values()
+        for elm in handlers:
+            elm.stop()
+        self._dispatching = False
+
 
 class Dispatcher(object):
 
     """docstring for dispatcher. """
+
+    @property
+    def control_handler(self):
+        """ Control handler property.
+
+        Tuple with handle as first element and handler as value
+        Fulfill Reactor pattern with a control channel.
+        """
+        return self._mechanism.control_handler
+
+    @control_handler.setter
+    def control_handler(self, value):
+        """ Control handler property. """
+        logger.debug("Setting control_handler.")
+        self._mechanism.control_handler = value
 
     def __init__(self, handler_table, mechanism=ReactorDispatcher):
         """ Create a Dispatcher.
