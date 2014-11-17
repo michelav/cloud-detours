@@ -45,7 +45,8 @@ class DefaultChannel(Channel):
         super(DefaultChannel, self).__init__()
         self._endpoint = endpoint
         self._context = get_Zcontext()
-        # self._socket = None
+        self._poller = zmq.Poller()
+        self._socket = None
 
     @property
     def socket(self):
@@ -59,13 +60,17 @@ class DefaultChannel(Channel):
 
     def connect(self):
         """ Connect the channel into the _endpoint. """
-        self._socket = self._context.socket(zmq.REQ)
-        self._socket.connect(self._endpoint)
+        if self._socket is None:
+            self._socket = self._context.socket(zmq.REQ)
+            self._socket.connect(self._endpoint)
+            self._poller.register(self._socket, zmq.POLLIN)
 
     def bind(self):
         """ Bind the channel into the _endpoint. """
-        self._socket = self._context.socket(zmq.REP)
-        self._socket.bind(self._endpoint)
+        if self._socket is None:
+            self._socket = self._context.socket(zmq.REP)
+            self._socket.bind(self._endpoint)
+            self._poller.register(self._socket, zmq.POLLIN)
 
     def send(self, evt):
         """ Send event as message.
@@ -94,7 +99,7 @@ class DefaultChannel(Channel):
         msg.append('[END]'.encode())
         self._socket.send_multipart(msg)
 
-    def recv(self):
+    def recv(self, timeout=None):
         """ Receive event as message.
 
         Return a dictionary with all headers and metadata of the event
@@ -108,17 +113,21 @@ class DefaultChannel(Channel):
         [END] - End Delimiter frame
 
         """
-        msg = self._socket.recv_multipart()
+        if self._poller.poll(timeout):
+            msg = self._socket.recv_multipart()
+            if not msg:
+                raise EventError('Invalid Event.')
 
-        if not msg:
-            raise EventError('Invalid Event.')
-
-        event = [json.loads(msg[0].decode())]
-        for frame in msg[1:]:  # Copy the rest of message but [END] delimiter
-            if '[END]' == frame.decode():
-                break
-            event.append(frame)
-        return event
+            event = [json.loads(msg[0].decode())]
+            for frame in msg[1:]:  # Copy rest of message but [END] delimiter
+                if '[END]' == frame.decode():
+                    break
+                event.append(frame)
+            return event
+        else:
+            error_msg = "Timeout while receiving Message."
+            logger.warning(error_msg)
+            raise IOError(error_msg)
 
     def close(self):
         """ Close channel connection. """
