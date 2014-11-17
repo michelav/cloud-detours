@@ -7,6 +7,7 @@ may use to create dispatchers and plug them into Cloud Detours.
 """
 import zmq
 import logging
+import traceback
 from pydetours.core import CloudDetoursError
 
 
@@ -65,7 +66,7 @@ class ReactorDispatcher(object):
             try:
                 socks = dict(poller.poll())
             except KeyboardInterrupt:
-                self._terminate()
+                self.terminate()
                 break
             for ready_channel in socks.keys():
                 handler = self._handler_table[ready_channel]
@@ -79,6 +80,18 @@ class ReactorDispatcher(object):
         # TODO: Include all message possibilities
         action = header['action']
         self._dispatching = not ('terminate' == action)
+
+    def check_status(self):
+        handlers = self._handler_table.values()
+        status_table = {}
+        for elm in handlers:
+            try:
+                status = elm.check_status()
+            except:
+                formatted_lines = traceback.format_exc().splitlines()
+                status = "NOK: {}".format(formatted_lines[-1])
+            status_table[elm.name] = status
+        return status_table
 
     def terminate(self):
         """ Terminate dispatching process. """

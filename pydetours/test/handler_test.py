@@ -5,6 +5,7 @@ from pathlib import Path
 import pydetours.handler as handler
 from pydetours.handler import DefaultCloudProvider, LocalProvider
 
+
 class Handle(object):
 
     @property
@@ -32,17 +33,13 @@ class DefaultIOHandlerTestCase(unittest.TestCase):
         except FileExistsError:
             pass
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.temp_container.rmdir()
-
     def setUp(self):
         self.local_path = str(Path('.').absolute())
         self.handle = Handle()
         self.cloud_options = {'provider_name': 'google_storage',
                               'provider_class': DefaultCloudProvider,
-                              'id': 'GOOGJ5BYZJI6YJG46TLQ',
-                              'key': '6IY+u3i9gxN2Sbx4KGlspFgRg5VkQlmMo331p5rf',
+                              'id': 'PUT YOUR ID HERE',
+                              'key': 'PUT YOUR KEY HERE',
                               'container_name': 'cloud-detours-test',
                               'path_prefix': self.local_path
                               }
@@ -240,6 +237,11 @@ class DefaultIOHandlerTestCase(unittest.TestCase):
                 return_evt = self.handle.event
                 self.assertEqual(rdel_header, return_evt[0])
 
+    def check_status_test(self):
+        cloud_status = self.cloud_handler.check_status()
+        self.assertEqual("OK", cloud_status, "Checking status should work.")
+        local_status = self.local_handler.check_status()
+        self.assertEqual("OK", local_status, "Checking status should work.")
 
 if __name__ == '__main__':
 

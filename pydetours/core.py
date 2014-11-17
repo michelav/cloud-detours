@@ -10,7 +10,6 @@ def create_context():
 
     with open(config_file, 'r') as f:
         config = yaml.load(f)
-        f.close()
     return config
 
 

@@ -293,6 +293,10 @@ class Handler(object):
         """ Handle property. """
         return self._handle
 
+    @property
+    def name(self):
+        return self._name
+
     def __init__(self, handle, **options):
         """ Constructor. """
         super(Handler, self).__init__()
@@ -313,6 +317,13 @@ class Handler(object):
         """ Free all resources and close handle. """
         self._handle.close()
         logger.info("Handler %s stopped.", self._name)
+
+    def start(self):
+        self._handle.bind()
+        logger.info("Handler %s started.", self._name)
+
+    def check_status(self):
+        return "OK"
 
     def _default_action(self, event):
         header = {ERROR, 'Unknown action.'}
@@ -369,17 +380,11 @@ class DefaultIOHandler(Handler):
         """ Check if everything is ok in handler. """
         obj_name = "status_ok.txt"
         text = "All OK"
-        ok = True
-        try:
-            self._provider.write(obj_name, text)
-            received = (text.encode() == self._provider.read(obj_name))
-            self._delete(obj_name)
-        except Exception:
-            ok = False
-        else:
-            ok = (ok and received)
-
-        return ok
+        self._provider.write(obj_name, text.encode())
+        received = (text.encode() == self._provider.read(obj_name))
+        self._provider.delete(obj_name)
+        status = "OK" if received else "NOK: Could not process obj properly."
+        return status
 
     def _read(self, event):
         """ Read the object from provider. """
@@ -551,17 +556,22 @@ class SimpleControlHandler(Handler):
     def __init__(self, handle, **options):
         super(SimpleControlHandler, self).__init__(handle, **options)
         self._actions = {'status': self._check_status,
-                 'terminate': self._terminate}
+                         'terminate': self._terminate}
 
         logger.info("%s Handler available at %s endpoint.",
-            self._name,
-            self._handle.endpoint)
+                    self._name, self._handle.endpoint)
 
     def _check_status(self, evt):
+        if is_debug_enabled:
+            logger.debug("Checking status of handler %s", self._name)
         status = self._controlled.check_status()
+        if is_debug_enabled:
+            logger.debug("Handler %s status is: %s", self._name, status)
         header = {ACTION: 'status', RETURN: status}
         self._handle.send(self._build_evt(header))
 
     def _terminate(self, evt):
         logger.info("Terminate command requested.")
+        header = {ACTION: 'terminate', RETURN: "Terminating Detours."}
+        self._handle.send(self._build_evt(header))
         self._controlled.terminate()

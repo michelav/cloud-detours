@@ -17,7 +17,7 @@ logging:
         class : logging.handlers.RotatingFileHandler
         formatter: precise
         level   : DEBUG
-        filename: detours.log
+        filename: /tmp/detours/logs/detours.log
         maxBytes: 1024
         backupCount: 3
     root:
@@ -26,3 +26,8 @@ logging:
 detours:
     keys: '~/devel/keys.yaml'
     dispatch_layer: 'etc/dispatcher.yaml'
+    dirs:
+        - /tmp/detours
+        - /tmp/detours/channels
+        - /tmp/detours/output
+        - /tmp/detours/logs

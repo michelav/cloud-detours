@@ -1,0 +1,35 @@
+handlers:
+    instances:
+        - !control_handler &control
+            name: 'control'
+            type: !!python/name:pydetours.handler.SimpleControlHandler
+            channel: !channel 'ipc:///tmp/detours/channels/control.ipc'
+        # - !io_handler
+        #     name: 'aws'
+        #     type: !!python/name:pydetours.handler.DefaultIOHandler
+        #     channel: !channel 'ipc:///tmp/detours/channels/aws.ipc'
+        #     provider_name: s3_us_west_oregon
+        #     provider_class: !!python/name:pydetours.handler.DefaultCloudProvider
+        #     id: my_id
+        #     key: aws-s3
+        #     container_name: detours-test
+        #     path_prefix: /foo/bar/
+        - !io_handler
+            name: 'google storage'
+            type: !!python/name:pydetours.handler.DefaultIOHandler
+            channel: !channel 'ipc:///tmp/detours/channels/google.ipc'
+            provider_name: google_storage
+            provider_class: !!python/name:pydetours.handler.DefaultCloudProvider
+            id: 'PUT YOUR ID HERE'
+            key: 'PUT YOUR KEY HERE'
+            container_name: cloud-detours-test
+            path_prefix: /foo/bar/
+        - !io_handler
+            name: 'on-premise'
+            type: !!python/name:pydetours.handler.DefaultIOHandler
+            channel: !channel 'ipc:///tmp/detours/channels/local.ipc'
+            provider_name: 'local fs'
+            provider_class: !!python/name:pydetours.handler.LocalProvider
+            container_name: /tmp/detours/output/
+            path_prefix: /foo/bar/
+    control: *control
