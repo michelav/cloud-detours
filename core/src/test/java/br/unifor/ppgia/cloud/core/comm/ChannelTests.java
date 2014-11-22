@@ -5,9 +5,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
 
-import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -16,49 +14,44 @@ import br.unifor.ppgia.cloud.core.comm.defaultimpl.DefaultChannelProvider;
 
 public class ChannelTests {
 	
-	/*
-	 * You should start loopback.py program before running
-	 * tests.
-	 */
-	
-	Channel channel;
-	final static String ENDPOINT = "ipc:///tmp/tests.ipc";  
+	private static Channel client;
+	private static Channel server;
+	final static String ENDPOINT = "ipc:///tmp/tests.ipc";
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
-//		Runtime rt = Runtime.getRuntime();
-//		rt.exec("tests/loopback.py " + ENDPOINT);
+		ChannelProvider channelProvider = DefaultChannelProvider.getInstance();
+		client = channelProvider.createChannel(ENDPOINT);
+		server = channelProvider.createChannel(ENDPOINT);
+		client.connect();
+		server.bind();
 	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
-//		ChannelProvider channelProvider = DefaultChannelProvider.getInstance();
-//		Channel control = channelProvider.createChannel(ENDPOINT);
-//		control.sendEvent(channelProvider.getEvent(EventType.TERMINATE_EVT));
-//		control.close();
+		client.close();
+		server.close();
+		DefaultChannelProvider.getInstance().releaseResources();
 	}
 
-	@Before
-	public void setUp() throws Exception {
-		ChannelProvider channelProvider = DefaultChannelProvider.getInstance();
-		channel = channelProvider.createChannel(ENDPOINT);
-	}
-
-	@After
-	public void tearDown() throws Exception {
-		channel.close();
-	}
 
 	@Test
 	public void simpleSendAndRecvTest() {
 		ChannelProvider channelProvider = DefaultChannelProvider.getInstance();
 		Event ping = channelProvider.getEvent(EventType.PING_EVT);
-		channel.sendEvent(ping);
+		client.sendEvent(ping);
+		Event srvRecvEvent = server.recvEvent();
+		
+		assertEquals("Ping request is not working on IPC Channels...", "ping",
+				srvRecvEvent.getInfo("control"));
+		
+		Event pong = channelProvider.getEvent(EventType.PONG_EVT);
+		server.sendEvent(pong);
+		
+		Event cliRcvEvent = client.recvEvent();
 
-		Event pong = channel.recvEvent();
-
-		assertEquals("Ping request is not working on IPC Channels...", "pong",
-				pong.getInfo("control"));
+		assertEquals("Pong response is not working on IPC Channels...", "pong",
+				cliRcvEvent.getInfo("control"));
 	}
 
 	@Test
@@ -69,12 +62,22 @@ public class ChannelTests {
 		new Random().nextBytes(payload);
 
 		loop.setPayload(payload);
-		channel.sendEvent(loop);
-		Event back = channel.recvEvent();
+		client.sendEvent(loop);
+		
+		Event recvEvent = server.recvEvent();
+		assertEquals("LoopBack message is not working on IPC Channels...",
+				"loop", recvEvent.getInfo("control"));		
+		
+		Event back = channelProvider.getEvent(EventType.BLANK_EVT);
+		back.addInfo("control", "back");
+		back.setPayload(recvEvent.getPayload());
+		server.sendEvent(back);
+				
+		Event cliRcvEvent = client.recvEvent();
 
 		assertEquals("LoopBack message is not working on IPC Channels...",
-				"back", back.getInfo("control"));
+				"back", cliRcvEvent.getInfo("control"));
 		assertArrayEquals("LoopBack message is not working on IPC Channels...",
-				payload, back.getPayload());
+				payload, cliRcvEvent.getPayload());
 	}
 }

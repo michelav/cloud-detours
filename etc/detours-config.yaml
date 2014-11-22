@@ -18,7 +18,7 @@ logging:
         formatter: precise
         level   : DEBUG
         filename: /tmp/detours/logs/detours.log
-        maxBytes: 1024
+        maxBytes: 1024000
         backupCount: 3
     root:
         level: DEBUG
@@ -29,5 +29,5 @@ detours:
     dirs:
         - /tmp/detours
         - /tmp/detours/channels
-        - /tmp/detours/output
+        - /tmp/detours/container
         - /tmp/detours/logs

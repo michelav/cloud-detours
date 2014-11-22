@@ -1,0 +1,50 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven {
+            url "https://maven.eveoh.nl/content/repositories/releases"
+        }
+    }
+
+/*    dependencies {
+        classpath "detours.aspect:gradle-aspectj:1.1"
+    } */
+
+   dependencies {
+        classpath "nl.eveoh:gradle-aspectj:1.4"
+    }
+}
+
+ext {
+    aspectjVersion = '1.7.+'
+}
+
+apply plugin: 'aspectj'
+
+project.sourceSets.main.java {
+    srcDirs = ['src/main/java', 'src/main/aspects', detour]
+}
+
+jar.baseName = distName
+
+dependencies {
+    compile project(':core')
+    ajInpath files(application)
+}
+
+compileAspect {
+    xlint = 'warning'
+ //   additionalAjcArgs = ['verbose' : 'true', 'showWeaveInfo' : 'true']
+}
+
+task deployDetour(type: Copy) {
+    def coreLib =  project(':core').tasks['jar'].archivePath
+    def detourLib = tasks['jar'].archivePath
+
+   from([coreLib, detourLib])
+   from configurations.runtime.files
+    into detourDistDir
+}
+
+deployDetour.dependsOn build

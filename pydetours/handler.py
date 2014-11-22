@@ -111,7 +111,6 @@ class DefaultCloudProvider(Provider):
         except Exception:
             msg = "Fatal error while creating %s provider."
             self._handle_error(CloudDetoursError, msg, self._name)
-            raise
 
     def exists(self, object_name):
         """ Check if object exists. """
@@ -133,9 +132,7 @@ class DefaultCloudProvider(Provider):
             if is_debug_enabled:
                 logger.debug(
                     "Object %s downloaded as stream from %s.",
-                    object_name,
-                    self._container.name
-                    )
+                    object_name, self._container.name)
 
             parts = []
             for chunk in stream:
@@ -196,10 +193,11 @@ class DefaultCloudProvider(Provider):
         try:
             obj = self._container.get_object(object_name)
         except ObjectDoesNotExistError:
-            logger.warn(
-                "Object %s does not exists in %s",
-                object_name,
-                self._container_name)
+            if is_debug_enabled:
+                logger.debug(
+                    "Object %s does not exists in %s",
+                    object_name,
+                    self._container_name)
         return obj
 
 
@@ -310,7 +308,9 @@ class Handler(object):
         header = evt[0]
         action = header.get(ACTION)
         handle_ftn = self._actions.get(action, self._default_action)
-        logger.info("%s Handler: Action %s received.", self._name, action)
+        if is_debug_enabled:
+            logger.info("%s Handler: Action %s received.",
+                        self._name, action)
         handle_ftn(evt)
 
     def stop(self):
@@ -455,6 +455,7 @@ class DefaultIOHandler(Handler):
         resp_evt = None
         resp_header = None
         try:
+            logger.debug("HEADER: %s", header)
             dir_name = header[DIR_NAME]
             self._provider.mkdir(dir_name)
             resp_header = {ACTION: MKDIR_ACTION,
@@ -571,7 +572,8 @@ class SimpleControlHandler(Handler):
         self._handle.send(self._build_evt(header))
 
     def _terminate(self, evt):
-        logger.info("Terminate command requested.")
+        if is_debug_enabled:
+            logger.debug("Terminate command requested.")
         header = {ACTION: 'terminate', RETURN: "Terminating Detours."}
         self._handle.send(self._build_evt(header))
         self._controlled.terminate()

@@ -37,6 +37,7 @@ public class DefaultChannel implements Channel {
 
 	public void connect() {
 		socket = zContext.socket(ZMQ.REQ);
+		System.out.println("ENDPOINT: " + endpoint);
 		socket.connect(endpoint);
 	}
 	
@@ -72,8 +73,8 @@ public class DefaultChannel implements Channel {
 		// Event closeEvt = ChannelProvider.getInstance().getEvent(
 		// EventType.CLOSE_EVT);
 		// sendEvent(closeEvt);
-
 		// XXX Log Close Event
+		socket.setLinger(0);
 		socket.close();
 	}
 }

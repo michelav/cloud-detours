@@ -17,23 +17,6 @@ public class DefaultChannelProvider extends ChannelProvider {
 	public Channel createChannel(String endpoint) {
 		DefaultChannel channel = new DefaultChannel(endpoint);
 		channel.setUpContext(zContext);
-		channel.connect();
-		return channel;
-	}
-
-	@Override
-	public Channel createChannel(String protocol, String address) {
-		DefaultChannel channel = new DefaultChannel(protocol, address);
-		channel.setUpContext(zContext);
-		channel.connect();
-		return channel;
-	}
-
-	@Override
-	public Channel createChannel(String protocol, String address, int port) {
-		DefaultChannel channel = new DefaultChannel(protocol, address, port);
-		channel.setUpContext(zContext);
-		channel.connect();
 		return channel;
 	}
 	
@@ -42,18 +25,16 @@ public class DefaultChannelProvider extends ChannelProvider {
 		Event evt = null;
 		
 		switch(type) {
-		case REQUEST_EVT:
-		case CLOSE_EVT:
-			evt = createEvent("action", type.getCode());
-			break;
 		case PING_EVT:
+		case PONG_EVT:
 		case LOOPBACK_EVT:
-		case TERMINATE_EVT:
 			evt = createEvent("control", type.getCode());
 			break;
 		case BLANK_EVT:
-		default:
 			evt = createBlankEvent();
+			break;
+		default:
+			evt = createEvent("action", type.getCode());
 		}
 		return evt;
 	}
@@ -69,5 +50,12 @@ public class DefaultChannelProvider extends ChannelProvider {
 	
 	private Event createBlankEvent() {
 		return new DefaultIOEvent();
+	}
+
+	@Override
+	public void releaseResources() {
+		//zContext.term();
+		System.out.println("Context released...");
+
 	}
 }

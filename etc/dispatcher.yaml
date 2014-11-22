@@ -20,16 +20,16 @@ handlers:
             channel: !channel 'ipc:///tmp/detours/channels/google.ipc'
             provider_name: google_storage
             provider_class: !!python/name:pydetours.handler.DefaultCloudProvider
-            id: 'PUT YOUR ID HERE'
-            key: 'PUT YOUR KEY HERE'
+            id: 'ID'
+            key: 'KEY'
             container_name: cloud-detours-test
-            path_prefix: /foo/bar/
+            path_prefix: /home/michel/devel/jspider
         - !io_handler
             name: 'on-premise'
             type: !!python/name:pydetours.handler.DefaultIOHandler
             channel: !channel 'ipc:///tmp/detours/channels/local.ipc'
             provider_name: 'local fs'
             provider_class: !!python/name:pydetours.handler.LocalProvider
-            container_name: /tmp/detours/output/
-            path_prefix: /foo/bar/
+            container_name: /tmp/detours/container
+            path_prefix: /home/michel/devel/jspider
     control: *control

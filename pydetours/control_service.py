@@ -18,7 +18,6 @@ def status(channel):
         print("Unknown status: {}".format(str(e)))
     else:
         response_header = response[0]
-        print(response_header)
         status_dict = response_header['return']
         for elm, status in status_dict.items():
             print("### {} --> {}".format(elm, status))
@@ -59,7 +58,7 @@ def start_service(endpoint):
 
     global keep_going
     while keep_going:
-        command = input('>')
+        command = input('> ')
         command_ftn = commands.get(command, unkown_command)
         command_ftn(control)
         print()
