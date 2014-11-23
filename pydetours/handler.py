@@ -7,6 +7,7 @@ It should also implement handle_event method.
 import logging
 from io import BytesIO
 from pathlib import Path
+from os.path import relpath, normpath, join
 from pydetours.core import CloudDetoursError, BadProviderError
 from pydetours.core import BadContainerError, BadOptionsError
 from libcloud.storage.providers import get_driver
@@ -72,15 +73,23 @@ class Provider(object):
 
     def _process_path(self, abs_path):
         """ Remove path prefix. """
-        if abs_path.startswith(self._prefix):
-            return abs_path[len(self._prefix):]
+        if '/' == abs_path[0]:
+            path = normpath(relpath(abs_path, self._prefix))
         else:
-            return abs_path
+            path = normpath(abs_path)
+        return path
+        # if abs_path.startswith(self._prefix):
+        #     return abs_path[len(self._prefix):]
+        # else:
+        #     return abs_path
 
     def _handle_error(self, error, msg, *args):
         parsed_msg = msg % args if args else msg
         logger.exception(parsed_msg)
         raise error(parsed_msg)
+
+    def _is_root(self, dir_name):
+        return '.' == (relpath(dir_name, self._prefix))
 
 
 class DefaultCloudProvider(Provider):
@@ -114,13 +123,22 @@ class DefaultCloudProvider(Provider):
 
     def exists(self, object_name):
         """ Check if object exists. """
+        if self._is_root(object_name):  # Root
+            return True
         parsed_obj_name = self._process_path(object_name)
-        return (self._get_object(parsed_obj_name) is not None)
+
+        if self._get_object(parsed_obj_name):  # File exists
+            return True
+
+        if self._get_object("{}/".format(parsed_obj_name)):  # Dir exists
+            return True
+
+        return False  # if none option is accomplished
 
     def read(self, object_name):
         """ Read the object from configured place.
 
-        It returns the object as an immutable byte sequence or None
+        It returns the object '.' == immutable byte sequence or None
         if it does not exists according to its textual name in object.
         """
         as_bytes = None
@@ -157,10 +175,11 @@ class DefaultCloudProvider(Provider):
         Returns True if created, False otherwise.
         """
         # Dir should have a '/' in its end
-        parsed_dir = dir_name if ('/' == dir_name[-1:]) else "%s/" % (dir_name)
+        # parsed_dir = dir_name if ('/' == dir_name[-1:]) else "%s/" % (dir_name)
         # TODO Refactor this to have '/' as a parameter or configurable value
-        if not self.exists(parsed_dir):
+        if not self.exists(dir_name):
             try:
+                parsed_dir = "{}/".format(self._process_path(dir_name))
                 self._container.upload_object_via_stream(
                     BytesIO(b''), parsed_dir)
             except Exception:
@@ -173,15 +192,25 @@ class DefaultCloudProvider(Provider):
         else:
             logger.warning(
                 "Directory %s already exists in %s.",
-                parsed_dir,
+                dir_name,
                 self._container.name)
-            raise Exception("Could not create directory.")
+            raise FileExistsError("Could not create directory.")
 
     def delete(self, obj_name):
         """ Delete the object from container. """
+        if self._is_root(obj_name):
+            msg = "Can't delete root directory."
+            logger.error(msg)
+            raise CloudDetoursError(msg)
         parsed_name = self._process_path(obj_name)
         obj = self._get_object(parsed_name)
-        obj.delete()
+        if obj:
+            obj.delete()
+        else:  # check if there is a directory
+            as_dir = "{}/".format(parsed_name)
+            obj = self._get_object(as_dir)
+            obj.delete()
+
         if is_debug_enabled:
             logger.debug(
                 "Objet %s removed from %s container.",
@@ -222,9 +251,10 @@ class LocalProvider(Provider):
 
     def exists(self, object_name):
         """ Check if object_name exists  in provider. """
-        local_path = "%s/%s" % (
-            self._container_name, self._process_path(object_name))
-        path = Path(local_path)
+        if self._is_root(object_name):   # Root
+            return True
+        parsed_path = self._process_path(object_name)
+        path = Path(parsed_path)
         return path.exists()
 
     def read(self, object_name):
@@ -264,12 +294,23 @@ class LocalProvider(Provider):
 
     def mkdir(self, dir_name):
         """ Create directory dir_name. """
+        if self._is_root(dir_name):  # Root
+            logger.warning(
+                "Directory %s already exists in %s.",
+                "<Root>",
+                self._container.name)
+            raise FileExistsError("Could not create directory.")
+
         file_name = self._process_path(dir_name)
         dir_path = Path(file_name)
         dir_path.mkdir()
 
     def delete(self, obj_name):
         """ Delete object name. """
+        if self._is_root(obj_name):
+            msg = "Can't delete root directory."
+            logger.error(msg)
+            raise CloudDetoursError(msg)
         parsed_name = self._process_path(obj_name)
         obj = Path(parsed_name)
         if obj.is_dir():
@@ -278,8 +319,13 @@ class LocalProvider(Provider):
             obj.unlink()
 
     def _process_path(self, object_name):
-        cur_path = super()._process_path(object_name)
-        return "%s/%s" % (self._container_name, cur_path)
+        if '/' == object_name[0]:
+            cur_path = relpath(object_name, self._prefix)
+            path = normpath(join(self._container_name, cur_path))
+        else:
+            path = normpath(join(self._container_name, object_name))
+        return path
+        #return "%s/%s" % (self._container_name, cur_path)
 
 
 class Handler(object):
@@ -464,6 +510,11 @@ class DefaultIOHandler(Handler):
         except KeyError:
             msg = "Malformed event: dir_name is mandatory to mkdir action."
             resp_evt = self._handle_error('EventError', msg)
+
+        except FileExistsError:
+            msg = "Can't create dir {}. " \
+                "It already exists in {}.".format(dir_name, self._provider.name)
+            resp_evt = self._handle_error('DirExistsError', msg)
 
         except Exception:
             msg = "Fatal Error: Could not create dir {} " \

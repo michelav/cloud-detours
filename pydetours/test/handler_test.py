@@ -27,7 +27,7 @@ class DefaultIOHandlerTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.temp_container = Path('/tmp/detours')
+        cls.temp_container = Path('/tmp/detours/container')
         try:
             cls.temp_container.mkdir(mode=0o777, parents=False)
         except FileExistsError:
@@ -46,7 +46,7 @@ class DefaultIOHandlerTestCase(unittest.TestCase):
 
         self.local_options = {'provider_name': 'file system',
                               'provider_class': LocalProvider,
-                              'container_name': '/tmp/detours',
+                              'container_name': '/tmp/detours/container',
                               'path_prefix': self.local_path
                               }
         self.cloud_handler = handler.DefaultIOHandler(
@@ -88,7 +88,7 @@ class DefaultIOHandlerTestCase(unittest.TestCase):
         with self.assertRaises(BadContainerError):
             handler.DefaultIOHandler(
                 self.handle, name='Google', **cloud_options)
-            handler.DefaultIOHandler(self.handle, name= 'Local', **local_options)
+            handler.DefaultIOHandler(self.handle, name='Local', **local_options)
 
     def bad_options_test(self):
         options = {}
@@ -97,6 +97,21 @@ class DefaultIOHandlerTestCase(unittest.TestCase):
             handler.DefaultIOHandler(
                 self.handle, name='Google CLoud', **options)
             handler.DefaultIOHandler(self.handle, name='Local', **options)
+
+    def root_exists_test(self):
+        h_exists = {handler.ACTION: handler.EXISTS_ACTION,
+                    handler.OBJECT_NAME: self.local_path}
+        r_exists = {handler.ACTION: handler.EXISTS_ACTION,
+                    handler.PAYLOAD: handler.FALSE,
+                    handler.RETURN: handler.TRUE}
+
+        handlers = [self.cloud_handler, self.local_handler]
+
+        for i in range(0, len(handlers)):
+            with self.subTest(i=i):
+                handlers[i]._exists([h_exists])
+                return_evt = self.handle.event
+                self.assertEqual(r_exists, return_evt[0])
 
     def mkdir_test(self):
 
@@ -110,11 +125,11 @@ class DefaultIOHandlerTestCase(unittest.TestCase):
         mkdir_evt = [h_mkdir]
 
         # Error headers when creating a dir that exists
-        error_msg = "Fatal Error: Could not create dir %s in provider %s."
-        e_google = {handler.ERROR: 'MkdirError',
+        error_msg = "Can't create dir %s. It already exists in %s."
+        e_google = {handler.ERROR: 'DirExistsError',
                     handler.PAYLOAD: handler.FALSE,
                     handler.MESSAGE: error_msg % ('my_dir', 'google_storage')}
-        e_local = {handler.ERROR: 'MkdirError',
+        e_local = {handler.ERROR: 'DirExistsError',
                    handler.PAYLOAD: handler.FALSE,
                    handler.MESSAGE: error_msg % ('my_dir', 'file system')}
 
@@ -138,9 +153,21 @@ class DefaultIOHandlerTestCase(unittest.TestCase):
                        handler.RETURN: handler.TRUE,
                        handler.PAYLOAD: handler.FALSE}
 
+        # Request to create '' dir
+        h_root = {handler.ACTION: handler.MKDIR_ACTION,
+                  handler.DIR_NAME: self.local_path}
+
+        r_rgoogle = {handler.ERROR: 'DirExistsError',
+                     handler.PAYLOAD: handler.FALSE,
+                     handler.MESSAGE: error_msg % (self.local_path, 'google_storage')}
+        r_rlocal = {handler.ERROR: 'DirExistsError',
+                    handler.PAYLOAD: handler.FALSE,
+                    handler.MESSAGE: error_msg % (self.local_path, 'file system')}
+
         handlers = [self.cloud_handler, self.local_handler]
         mkdir_error_msgs = [e_google, e_local]
         del_error_msgs = [ed_google, ed_local]
+        root_errors = [r_rgoogle, r_rlocal]
 
         for i in range(0, len(handlers)):
             with self.subTest(i=i):
@@ -159,6 +186,10 @@ class DefaultIOHandlerTestCase(unittest.TestCase):
                 handlers[i]._delete([del_header])
                 return_evt = self.handle.event
                 self.assertEqual(rdel_header, return_evt[0])
+
+                handlers[i]._mkdir([h_root])
+                return_evt = self.handle.event
+                self.assertEqual(root_errors[i], return_evt[0])
 
     def read_write_delete_test(self):
         file_path = "%s/%s" % (self.local_path, 'my_obj.txt')

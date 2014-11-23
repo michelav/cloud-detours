@@ -37,7 +37,6 @@ public class DefaultChannel implements Channel {
 
 	public void connect() {
 		socket = zContext.socket(ZMQ.REQ);
-		System.out.println("ENDPOINT: " + endpoint);
 		socket.connect(endpoint);
 	}
 	
