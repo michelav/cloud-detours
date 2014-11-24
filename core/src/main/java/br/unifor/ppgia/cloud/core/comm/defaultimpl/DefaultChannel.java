@@ -1,5 +1,7 @@
 package br.unifor.ppgia.cloud.core.comm.defaultimpl;
 
+import java.nio.charset.Charset;
+
 import org.zeromq.ZMQ;
 
 import br.unifor.ppgia.cloud.core.comm.Channel;
@@ -10,8 +12,9 @@ public class DefaultChannel implements Channel {
 	private ZMQ.Context zContext = null;
 	private ZMQ.Socket socket;
 	private String endpoint = null;
+	private Charset cs = Charset.forName("UTF-8");
 	
-	private final String END_DELIMITER = "[END]";
+	private final byte[] END_DELIMITER = "[END]".getBytes(cs);
 
 	public DefaultChannel(String protocol, String address, int port) {
 		StringBuilder sb = new StringBuilder(protocol);
@@ -47,23 +50,28 @@ public class DefaultChannel implements Channel {
 
 	@Override
 	public void sendEvent(Event evt) {
-		socket.sendMore(evt.wire());
+		byte[] evtAsBytes = evt.wire().getBytes(cs);
+		socket.send(evtAsBytes, ZMQ.SNDMORE);
+//		socket.sendMore();
 		byte[] payload = evt.getPayload();
 		if (payload != null) {
-			socket.send(payload, 0);
-		} else {
+			socket.send(payload, ZMQ.SNDMORE);
+		} 
 			socket.send(END_DELIMITER, 0);
-		}
 	}
 
 	@Override
 	public Event recvEvent() {
-		String header = (new String(socket.recv())).trim();
+		String header = socket.recvStr(cs).trim();
 		Event evt = new DefaultIOEvent();
 		evt.loadMetaData(header);
-		if (socket.hasReceiveMore()) {
+		
+		String payloaded = evt.getInfo("payload");
+		
+		if("True".equalsIgnoreCase(payloaded)) {
 			evt.setPayload(socket.recv());
 		}
+		socket.recv(); // Removing END delimiter from the channel.
 		return evt;
 	}
 

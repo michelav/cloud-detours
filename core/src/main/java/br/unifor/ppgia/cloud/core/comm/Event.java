@@ -12,10 +12,12 @@ public abstract class Event {
 	
 	public Event() {
 		metaData = new HashMap<String, String>();
+		metaData.put("payload", "False");
 	}
 	
 	public Event(Map<String, String> md) {
 		metaData = md;
+		metaData.put("payload", "False");
 	}
 	
 	public Event(Map<String, String> md, byte[] data) {
@@ -52,7 +54,10 @@ public abstract class Event {
 	}
 
 	public void setPayload(byte[] payload) {
-		this.payload = payload;
+		if(payload != null) {
+			this.payload = payload;
+			addInfo("payload", "True");
+		}
 	}
 	
 	public abstract String wire();

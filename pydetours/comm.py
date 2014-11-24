@@ -118,11 +118,13 @@ class DefaultChannel(Channel):
             if not msg:
                 raise EventError('Invalid Event.')
 
-            event = [json.loads(msg[0].decode())]
-            for frame in msg[1:]:  # Copy rest of message but [END] delimiter
-                if '[END]' == frame.decode():
-                    break
-                event.append(frame)
+            header = json.loads(msg[0].decode())
+            event = [header]
+
+            has_payload = ('True' == header.get('payload', 'False'))
+            if has_payload:
+                event.append(msg[1])
+            # [END] delimiter discarded
             return event
         else:
             error_msg = "Timeout while receiving Message."
