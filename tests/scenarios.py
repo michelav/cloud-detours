@@ -5,7 +5,7 @@ import yaml
 import sys
 from pathlib import Path
 from os.path import normpath, join
-from datetime import datetime
+from datetime import datetime, timedelta
 import csv
 
 
@@ -46,7 +46,7 @@ def execute_case(x, case, report_dir, rep, site):
     name = case['name']
     command = "%s %s download" % (case['command'], site)
     cl = case['class']
-    print_as_markdown(rep, 'command', "h5")
+    print_as_markdown(rep, 'command', "h3")
     print_as_markdown(rep, command, "block")
     print_as_markdown(rep, "Type: {}".format(name), "item")
     print_as_markdown(rep, "Class: {}".format(cl), "item")
@@ -58,7 +58,7 @@ def execute_case(x, case, report_dir, rep, site):
         end = time()
 
     elapsed = end - start
-    print_as_markdown(rep, "Elapsed time: {:.2f} secs".format(elapsed), "item")
+    print_as_markdown(rep, "Exec. Elapsed time: {:.2f} secs".format(elapsed), "item")
     return elapsed
 
 
@@ -88,15 +88,26 @@ def main(iterations, report_dir, site):
             csv_header.append('{}-{}'.format(doc['name'], doc['class']))
 
         wr.writerow(csv_header)
+        out_start = time()
 
         for i in range(iterations):
-            print_as_markdown(rep_file, "Iteration {}".format(i + 1), "h3")
+            it_start = time()
+            print_as_markdown(rep_file, "Iteration {}".format(i + 1), "h2")
             csv_line = []
             for doc in docs:
                 elapsed = execute_case(i + 1, doc, report_dir, rep_file, site)
-                csv_line.append("{:.2f}".format(elapsed))
+                csv_line.append("{}".format(elapsed))
             wr.writerow(csv_line)
+            it_end = time()
+            it_elapsed = timedelta(0, it_end - it_start)
+            print_as_markdown(rep_file,
+                              'Iteration elapsed time: {}\n'.format(str(it_elapsed)),
+                               'h3')
+        out_end = time()
 
+        overall = timedelta(0, out_end - out_start)
+        print_as_markdown(rep_file,
+                          "Overall elapsed time: {}".format(str(overall)), "h2")
 
 if __name__ == '__main__':
     try:
