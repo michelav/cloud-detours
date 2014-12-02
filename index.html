@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Cloud Detours by michelav</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/main.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <header>
+        <h1>Cloud Detours</h1>
+        <p></p>
+      </header>
+
+      <div id="banner">
+        <span id="logo"></span>
+
+        <a href="https://github.com/michelav/cloud-detours" class="button fork"><strong>View On GitHub</strong></a>
+        <div class="downloads">
+          <span>Downloads:</span>
+          <ul>
+            <li><a href="https://github.com/michelav/cloud-detours/zipball/master" class="button">ZIP</a></li>
+            <li><a href="https://github.com/michelav/cloud-detours/tarball/master" class="button">TAR</a></li>
+          </ul>
+        </div>
+      </div><!-- end banner -->
+
+    <div class="wrapper">
+      <nav>
+        <ul></ul>
+      </nav>
+      <section>
+        <h1>
+<a id="cloud-detours" class="anchor" href="#cloud-detours" aria-hidden="true"><span class="octicon octicon-link"></span></a>Cloud Detours</h1>
+
+<p>Cloud Detours is an architecture \ framework that aims on providing support to migrate web application into Cloud Environments.</p>
+
+<h2>
+<a id="building-cloud-detours" class="anchor" href="#building-cloud-detours" aria-hidden="true"><span class="octicon octicon-link"></span></a>Building Cloud Detours</h2>
+
+<h3>
+<a id="--environment-setup-" class="anchor" href="#--environment-setup-" aria-hidden="true"><span class="octicon octicon-link"></span></a>**  Environment Setup **</h3>
+
+<p>The following components are mandatory to build up Detours:</p>
+
+<ul>
+<li>
+<a href="http://www.oracle.com/br/technologies/java/overview/index.html" title="Java">Java</a>;</li>
+<li>
+<a href="https://www.python.org/" title="Python">Python</a>;</li>
+<li>
+<a href="https://libcloud.apache.org/" title="Apache Libcloud">Apache Libcloud</a>;</li>
+<li>
+<a href="http://zeromq.org/" title="ZeroMQ">ZeroMQ</a> and its bidings to Java \ Python;</li>
+<li>
+<a href="http://gradle.org" title="Gradle">Gradle</a>.</li>
+</ul>
+
+<h4>
+<a id="installing-java" class="anchor" href="#installing-java" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installing Java</h4>
+
+<p>You can use any method you want to install java. I've installed java8 as described in <a href="http://www.webupd8.org/2012/09/install-oracle-java-8-in-ubuntu-via-ppa.html" title="Webupd8">Webupd8</a>.</p>
+
+<h4>
+<a id="python" class="anchor" href="#python" aria-hidden="true"><span class="octicon octicon-link"></span></a>Python</h4>
+
+<p>I'm currently using Python3 installed from Ubuntu 14.04 canonical sources.</p>
+
+<h4>
+<a id="apache-libcloud" class="anchor" href="#apache-libcloud" aria-hidden="true"><span class="octicon octicon-link"></span></a>Apache Libcloud</h4>
+
+<p>You can have this through PIP3 or you can also install it through Ubuntu sources. I just installed python3-libcloud .</p>
+
+<h4>
+<a id="zeromq-and-java-bindings" class="anchor" href="#zeromq-and-java-bindings" aria-hidden="true"><span class="octicon octicon-link"></span></a>ZeroMQ and Java Bindings</h4>
+
+<p>You can install it from Ubuntu sources (libzmq3 and libzmq3-dev) or download the tarball from <a href="http://download.zeromq.org/zeromq-4.0.4.tar.gz" title="ZMQ 4.0.4 download">ZMQ download site</a>.</p>
+
+<p>If you're using the tarball just follow the instructions from INSTALL file and you're going to get it good.</p>
+
+<p>In order to have Java bindings installed, just download the sources and follow the usual way to compile it: autogen, configure, make and make install.</p>
+
+<h4>
+<a id="gradle" class="anchor" href="#gradle" aria-hidden="true"><span class="octicon octicon-link"></span></a>Gradle</h4>
+
+<p>Download and extract gradle bundle. After that, create an environment variable GRADLE_HOME and make Gradle available in path:</p>
+
+<blockquote>
+<p>GRADLE_HOME=$HOME/apps/gradle</p>
+
+<p>PATH=$PATH:$GRADLE_HOME/bin</p>
+</blockquote>
+
+<p>You can load <em>.profile</em> and check gradle version:</p>
+
+<blockquote>
+<p>$ . .profile</p>
+
+<p>$ gradle -v</p>
+</blockquote>
+      </section>
+      <footer>
+        <p>Project maintained by <a href="https://github.com/michelav">michelav</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
