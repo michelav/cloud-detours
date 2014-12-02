@@ -4,9 +4,10 @@ from time import time
 import yaml
 import sys
 from pathlib import Path
-from os.path import normpath, join
+from os.path import normpath, join, expanduser
 from datetime import datetime, timedelta
 import csv
+from shutil import rmtree
 
 
 def print_as_markdown(the_file, msg, mark):
@@ -36,10 +37,29 @@ def print_as_markdown(the_file, msg, mark):
         out = "* {}".format(msg)
         print(out, file=the_file)
         print(out)
+    elif 'text' == mark:
+        print(msg, file=the_file)
+        print(msg)
 
 
 def name_output(x, name, cl):
     return "{:0>2d}_{}_{}.txt".format(x, name, cl)
+
+
+def clean_local(site):
+    splitted = site.split('/')
+    # Considering jspider output is ~/devel/jspider/output
+    home_dir = expanduser('~')
+    spider_out = normpath(join(home_dir, 'devel/jspider/output', splitted[2]))
+
+    # Considering detours container  /tmp/detours/container
+    detours_out = normpath(join('/tmp/detours/container', splitted[2]))
+    s = Path(spider_out)
+    if s.exists():
+        rmtree(spider_out)
+    d = Path(detours_out)
+    if d.exists():
+        rmtree(detours_out)
 
 
 def execute_case(x, case, report_dir, rep, site):
@@ -53,6 +73,8 @@ def execute_case(x, case, report_dir, rep, site):
 
     out = normpath(join(report_dir, name_output(x, name, cl)))
     with open(out, 'w') as out_file:
+        clean_local(site)
+        print_as_markdown(rep, "Local resources cleaned", "text")
         start = time()
         call([command], stdout=out_file, stderr=out_file, shell=True)
         end = time()

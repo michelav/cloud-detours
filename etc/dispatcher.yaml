@@ -10,20 +10,30 @@ handlers:
         #     channel: !channel 'ipc:///tmp/detours/channels/aws.ipc'
         #     provider_name: s3_us_west_oregon
         #     provider_class: !!python/name:pydetours.handler.DefaultCloudProvider
-        #     id: my_id
-        #     key: aws-s3
-        #     container_name: detours-test
-        #     path_prefix: /foo/bar/
+        #     id: 'ID'
+        #     key: 'KEY'
+        #     container_name: detours-testbed
+        #     path_prefix: /home/michel/devel/jspider
         - !io_handler
             name: 'google storage'
             type: !!python/name:pydetours.handler.DefaultIOHandler
             channel: !channel 'ipc:///tmp/detours/channels/google.ipc'
             provider_name: google_storage
             provider_class: !!python/name:pydetours.handler.DefaultCloudProvider
-            id: 'ID'
-            key: 'KEY'
+            id: ID
+            key: KEY
             container_name: cloud-detours-test
             path_prefix: /home/michel/devel/jspider
+        # - !io_handler
+        #     name: 'azure blobs'
+        #     type: !!python/name:pydetours.handler.DefaultIOHandler
+        #     channel: !channel 'ipc:///tmp/detours/channels/azure.ipc'
+        #     provider_name: azure_blobs
+        #     provider_class: !!python/name:pydetours.handler.DefaultCloudProvider
+        #     id: ID
+        #     key: KEY
+        #     container_name: detours-test
+        #     path_prefix: /home/michel/devel/jspider
         - !io_handler
             name: 'on-premise'
             type: !!python/name:pydetours.handler.DefaultIOHandler

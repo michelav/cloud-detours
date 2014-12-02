@@ -1,17 +1,17 @@
 ---
-name: on-premise
+name: premise
 command: './jspider.sh'
-class: full
+class: std
 ---
 name: local
 command: 'ENDPOINT=ipc:///tmp/detours/channels/local.ipc ./detoured_full.sh'
-class: full
+class: std
 ---
-name: google
-command: 'ENDPOINT=ipc:///tmp/detours/channels/google.ipc ./detoured_full.sh'
-class: full
----
+# name: google
+# command: 'ENDPOINT=ipc:///tmp/detours/channels/google.ipc ./detoured_full.sh'
+# class: normal
+# ---
 name: google
 command: 'ENDPOINT=ipc:///tmp/detours/channels/google.ipc ./detoured_light.sh'
-class: reduced
+class: opt
 
